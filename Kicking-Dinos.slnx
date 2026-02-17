@@ -1,0 +1,7 @@
+﻿<Solution>
+  <Project Path="Unity.Multiplayer.Center.Editor.csproj" />
+  <Project Path="Unity.Multiplayer.Center.Common.csproj" />
+  <Project Path="Unity.Multiplayer.Center.Editor.Tests.csproj" />
+  <Project Path="Unity.Multiplayer.Center.Tests.csproj" />
+  <Project Path="Assembly-CSharp.csproj" />
+</Solution>
