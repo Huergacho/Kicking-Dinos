@@ -1,10 +1,11 @@
+using System;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
 [RequireComponent(typeof(Rigidbody2D))]
 public class PlayerModel : MonoBehaviour
 {
-    [Header("Movement Settings")]
+  [Header("Movement Settings")]
     [SerializeField] private float speed = 5f;
     [SerializeField] private float jumpForce = 7f;
 
@@ -14,77 +15,81 @@ public class PlayerModel : MonoBehaviour
 
     [Header("Ground Detection")]
     [SerializeField] private LayerMask groundLayer;
-    [SerializeField] private float rayDistance = 0.2f;
     [SerializeField] private Transform groundCheck;
-
-    [Header("Input")]
-    [SerializeField] private InputActionReference movementAction;
-    [SerializeField] private InputActionReference jumpAction;
+    [SerializeField] private float groundCheckRadius = 0.1f;
 
     private Rigidbody2D rb;
-    private Vector2 movement;
-    private bool isGrounded;
 
-    void Awake()
+    private Vector2 movementInput;
+
+    private bool isGrounded;
+    private bool wasGrounded;
+
+    // EVENTS → Para Visuals
+    public event Action OnJumped;
+    public event Action<bool> OnMoveStateChanged;
+    public event Action<bool> OnGroundStateChanged;
+
+    private void Awake()
     {
         rb = GetComponent<Rigidbody2D>();
         rb.freezeRotation = true;
-
-        movementAction.action.Enable();
-        jumpAction.action.Enable();
-
-        jumpAction.action.started += Jump;
     }
 
-    void Update()
+    private void Update()
     {
-        HandleInput();
         CheckGround();
         HandleCoyoteTime();
     }
 
-    void FixedUpdate()
+    private void FixedUpdate()
     {
-        Move();
+        ApplyMovement();
     }
 
-    private void HandleInput()
+    public void SetMovement(Vector2 input)
     {
-        movement = movementAction.action.ReadValue<Vector2>();
+        movementInput = input;
+
+        bool isMoving = Mathf.Abs(input.x) > 0.01f;
+        OnMoveStateChanged?.Invoke(isMoving);
     }
 
-    private void Move()
+    public void RequestJump()
     {
-        rb.linearVelocity = new Vector2(movement.x * speed, rb.linearVelocity.y);
+        if (coyoteTimeCounter > 0f)
+        {
+            coyoteTimeCounter = 0f;
+            PerformJump();
+        }
     }
 
-    private void Jump(InputAction.CallbackContext context)
+    private void ApplyMovement()
     {
-        if (coyoteTimeCounter <= 0f)
-            return;
+        rb.linearVelocity = new Vector2(movementInput.x * speed, rb.linearVelocity.y);
+    }
 
-        coyoteTimeCounter = 0f;
-
+    private void PerformJump()
+    {
         rb.linearVelocity = new Vector2(rb.linearVelocity.x, 0f);
         rb.AddForce(Vector2.up * jumpForce, ForceMode2D.Impulse);
+
+        OnJumped?.Invoke();
     }
 
     private void CheckGround()
     {
-        RaycastHit2D hit = Physics2D.Raycast(
+        isGrounded = Physics2D.OverlapCircle(
             groundCheck.position,
-            Vector2.down,
-            rayDistance,
+            groundCheckRadius,
             groundLayer
         );
 
-        isGrounded = hit.collider != null;
-
-        Debug.DrawRay(
-            groundCheck.position,
-            Vector2.down * rayDistance,
-            isGrounded ? Color.green : Color.red
-        );
+        if (isGrounded != wasGrounded)
+        {
+            OnGroundStateChanged?.Invoke(isGrounded);
+            wasGrounded = isGrounded;
+        }
     }
 
     private void HandleCoyoteTime()
@@ -94,9 +99,4 @@ public class PlayerModel : MonoBehaviour
         else
             coyoteTimeCounter -= Time.deltaTime;
     }
-
-    private void OnDestroy()
-    {
-        jumpAction.action.started -= Jump;
-    }
-}
+} 
