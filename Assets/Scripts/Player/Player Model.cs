@@ -14,21 +14,30 @@ public class PlayerModel : MonoBehaviour
     private float coyoteTimeCounter;
 
     [Header("Ground Detection")]
-    [SerializeField] private LayerMask groundLayer;
-    [SerializeField] private Transform groundCheck;
-    [SerializeField] private float groundCheckRadius = 0.1f;
+    [SerializeField] private LayerMask groundLayer; 
+    public Transform groundCheck;
+    public float groundCheckRadius = 0.1f;
 
+    [Header("Attack Properties")] 
+    [SerializeField]private float attackDamage;
+    [SerializeField]private float attackRadius;
+    [SerializeField] private LayerMask attackLayer;
+    public Transform attackPoint;
+    
     private Rigidbody2D rb;
-
+    
     private Vector2 movementInput;
 
     private bool isGrounded;
     private bool wasGrounded;
 
+    
     // EVENTS → Para Visuals
     public event Action OnJumped;
-    public event Action<bool> OnMoveStateChanged;
+    public event Action<bool,float> OnMoveStateChanged;
     public event Action<bool> OnGroundStateChanged;
+
+    public event Action OnKick;
 
     private void Awake()
     {
@@ -52,7 +61,18 @@ public class PlayerModel : MonoBehaviour
         movementInput = input;
 
         bool isMoving = Mathf.Abs(input.x) > 0.01f;
-        OnMoveStateChanged?.Invoke(isMoving);
+        OnMoveStateChanged?.Invoke(isMoving,input.x);
+    }
+
+    public void RequestKick()
+    {
+        OnKick?.Invoke();
+        
+        bool isAbleToMakeDamage= Physics2D.OverlapCircle(transform.position, attackRadius,attackLayer);
+        if (isAbleToMakeDamage)
+        {
+            
+        }
     }
 
     public void RequestJump()

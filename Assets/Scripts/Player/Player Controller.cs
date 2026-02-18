@@ -7,6 +7,7 @@ using UnityEngine.InputSystem;
     {
         [SerializeField] private InputActionReference movementAction;
         [SerializeField] private InputActionReference jumpAction;
+        [SerializeField] private InputActionReference kickAction;
 
         private PlayerModel model;
 
@@ -18,6 +19,7 @@ using UnityEngine.InputSystem;
             jumpAction.action.Enable();
 
             jumpAction.action.started += _ => model.RequestJump();
+            kickAction.action.started += _ => model.RequestKick();
         }
 
         void Update()
